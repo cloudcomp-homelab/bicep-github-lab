@@ -1,0 +1,7 @@
+# Compiled Bicep output (ARM JSON)
+main.json
+modules/*.json
+
+# Editor/OS
+.vscode/
+Thumbs.db
