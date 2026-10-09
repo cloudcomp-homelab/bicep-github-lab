@@ -11,7 +11,7 @@ param location = 'westeurope'
 // ============================================================
 // DEFINE RESOURCE-GROUP
 // ============================================================
-param rgName = 'rg-mukremin'
+param rgName = 'rg-demo-01'
 
 // ============================================================
 // DEFINE PARAMETERS / VARIABELES

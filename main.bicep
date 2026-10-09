@@ -18,7 +18,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   tags: {
     CostCenter: 'Homelab'
     Owner: 'Mukremin'
-    environment: 'management'
+    environment: 'sandbox'
   }
 }
 

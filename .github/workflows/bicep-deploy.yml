@@ -1,0 +1,99 @@
+# ============================================================
+# BICEP DEPLOYMENT - SUBSCRIPTION SCOPE
+# ============================================================
+name: bicep-deploy
+
+# ============================================================
+# TRIGGERS
+# ============================================================
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# ============================================================
+# PERMISSIONS (least privilege)
+# ============================================================
+permissions:
+  id-token: write   # required for OIDC login to Azure
+  contents: read    # required to checkout the repository
+
+# ============================================================
+# CONCURRENCY - never run two deployments at the same time
+# ============================================================
+concurrency:
+  group: bicep-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+# ============================================================
+# VARIABLES
+# ============================================================
+env:
+  LOCATION: westeurope
+  TEMPLATE_FILE: main.bicep
+  PARAMETERS_FILE: main.bicepparam
+
+jobs:
+  # ============================================================
+  # JOB 1 - VALIDATE & WHAT-IF (pull requests only)
+  # ============================================================
+  validate:
+    name: Validate & What-if
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Bicep build (lint)
+        run: az bicep build --file ${{ env.TEMPLATE_FILE }} --stdout > /dev/null
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: What-if
+        run: >
+          az deployment sub what-if
+          --location ${{ env.LOCATION }}
+          --template-file ${{ env.TEMPLATE_FILE }}
+          --parameters ${{ env.PARAMETERS_FILE }}
+
+  # ============================================================
+  # JOB 2 - DEPLOY TO PRODUCTION (main only, after approval)
+  # ============================================================
+  deploy:
+    name: Deploy production
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: What-if
+        run: >
+          az deployment sub what-if
+          --location ${{ env.LOCATION }}
+          --template-file ${{ env.TEMPLATE_FILE }}
+          --parameters ${{ env.PARAMETERS_FILE }}
+
+      - name: Deploy
+        run: >
+          az deployment sub create
+          --name bicep-github-lab-${{ github.run_number }}
+          --location ${{ env.LOCATION }}
+          --template-file ${{ env.TEMPLATE_FILE }}
+          --parameters ${{ env.PARAMETERS_FILE }}
