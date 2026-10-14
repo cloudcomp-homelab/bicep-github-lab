@@ -11,8 +11,12 @@ param location = 'westeurope'
 // ============================================================
 // DEFINE RESOURCE-GROUP
 // ============================================================
-param rgName = 'rg-demo-01'
+param rgName = 'rg-vnet-01'
 
 // ============================================================
 // DEFINE PARAMETERS / VARIABELES
 // ============================================================
+param vnetname = 'vnet-01'
+param vnetaddresspre = '10.0.0.0/16'
+param snetname = 'snet-01'
+param snetaddresspre = '10.0.0.0/24'
